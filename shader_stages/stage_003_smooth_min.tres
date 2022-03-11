@@ -1,0 +1,98 @@
+[gd_resource type="Shader" format=2]
+
+[resource]
+code = "// Raymarching shader based on the work of Inigo Quilez @ iquilezles.org
+shader_type spatial;
+render_mode unshaded, depth_test_disable;
+
+uniform int MAX_STEPS = 100;
+uniform float MAX_DIST = 100.0;
+uniform float SURF_DIST = 0.01;
+
+uniform vec4 sphere1 = vec4(0.0, 0.0, 0.0, 2.0);
+uniform vec4 sphere2 = vec4(0.0, 0.0, 0.0, 2.0);
+uniform vec3 light = vec3(0.0, 1.0, 0.0);
+uniform float smoothness = 1.5;
+
+
+// **** Boolean Operators ****
+float union(float a, float b){
+	return min(a, b);
+}
+
+float smoothUnion(float d1, float d2, float k){
+    float h = clamp(0.5 + 0.5*(d2-d1)/k, 0.0, 1.0);
+    return mix(d2, d1, h) - k*h*(1.0-h);
+}
+
+float subtraction(float a, float b){
+	return max(-a, b);
+}
+
+float smoothSubtraction(float d1, float d2, float k){
+    float h = clamp(0.5 - 0.5*(d2+d1)/k, 0.0, 1.0);
+    return mix(d2, -d1, h) + k*h*(1.0-h);
+}
+
+float intersection(float a, float b){
+	return max(a, b);
+}
+
+float smoothIntersection(float d1, float d2, float k){
+    float h = clamp(0.5 - 0.5*(d2-d1)/k, 0.0, 1.0);
+    return mix(d2, d1, h) + k*h*(1.0-h);
+}
+
+// **** Shapes ****
+float sdSphere(vec3 p, vec3 sp, float r){
+	return length(sp - p) - r;
+}
+
+// **** Ray Marching ****
+float GetDist(vec3 p){
+	float d1 = sdSphere(p, sphere1.xyz, sphere1.a);
+	float d2 = sdSphere(p, sphere2.xyz, sphere2.a);
+	//float d = union(d1, d2);
+	//float d = subtraction(d1, d2);
+	float d = smoothIntersection(d1, d2, smoothness);
+	//float d = smoothUnion(d1, d2, smoothness);
+	return d;
+}
+
+vec3 GetNormal(vec3 p){
+	float d = GetDist(p);
+	vec2 e = vec2(0.01, 0.0);
+	
+	vec3 n = d - vec3(
+		GetDist(p-e.xyy),
+		GetDist(p-e.yxy),
+		GetDist(p-e.yyx));
+	
+	return normalize(n);
+}
+
+float RayMarch(vec3 ro, vec3 rd){
+	float dO=0.0;  // dO = current distance
+	for(int i=0; i<MAX_STEPS; i++){
+		vec3 p = ro + rd*dO;  // step along ray
+		float dS = GetDist(p);
+		dO += dS;
+		if(dO > MAX_DIST || dS<SURF_DIST) break;
+	}
+	return dO;
+}
+
+void fragment(){
+	vec3 ws_pixel_pos = ((CAMERA_MATRIX * vec4(VERTEX, 1.0)).xyz);
+	vec3 ro = (CAMERA_MATRIX * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+	vec3 rd = normalize(ws_pixel_pos - ro);
+	
+	float d = RayMarch(ro, rd);
+	ALPHA = step(d, MAX_DIST);
+	
+	vec3 p = ro + rd*d;
+	vec3 n = GetNormal(p);
+	float lighting = dot(n, light);
+	ALBEDO = vec3(lighting);
+}
+"

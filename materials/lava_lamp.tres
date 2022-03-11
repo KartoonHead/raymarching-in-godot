@@ -1,0 +1,21 @@
+[gd_resource type="ShaderMaterial" load_steps=3 format=2]
+
+[ext_resource path="res://lava_lamp.shader" type="Shader" id=1]
+[ext_resource path="res://textures/lava_lamp_matcap.png" type="Texture" id=2]
+
+[resource]
+shader = ExtResource( 1 )
+shader_param/sphereA = Plane( 0, 4.368, 0, 0.2 )
+shader_param/sphereB = Plane( 0, 4.318, 0, 0.15 )
+shader_param/sphereC = Plane( 0, 4.358, 0, 0.2 )
+shader_param/sphereD = Plane( 0, 4.967, 0, 0.2 )
+shader_param/sphereE = Plane( 0, 2.132, 0, 0.96 )
+shader_param/cone = Plane( 1.204, 9.757, -10.428, 0.348 )
+shader_param/plane = Plane( 0, 1, 0, -2.702 )
+shader_param/blend = 1.0
+shader_param/MAX_STEPS = 100
+shader_param/MAX_DIST = 100.0
+shader_param/SURF_DIST = 0.005
+shader_param/vertical_scale = 13.888
+shader_param/anim_speed = 0.3
+shader_param/matcap_texture = ExtResource( 2 )

@@ -1,0 +1,44 @@
+[gd_resource type="Shader" format=2]
+
+[resource]
+code = "// Raymarching shader based on the work of Inigo Quilez @ iquilezles.org
+shader_type spatial;
+render_mode unshaded, depth_test_disable;
+
+uniform int MAX_STEPS = 100;
+uniform float MAX_DIST = 100.0;
+uniform float SURF_DIST = 0.01;
+
+uniform vec4 sphere = vec4(0.0, 0.0, 0.0, 1.0);
+
+// **** Shapes ****
+float sdSphere(vec3 p, vec3 sp, float r){
+	return length(sp - p) - r;
+}
+
+// **** Ray Marching ****
+float GetDist(vec3 p){
+	float d = sdSphere(p, sphere.xyz, sphere.a);
+	return d;
+}
+
+float RayMarch(vec3 ro, vec3 rd){
+	float dO=0.0;  // dO = current distance
+	for(int i=0; i<MAX_STEPS; i++){
+		vec3 p = ro + rd*dO;  // step along ray
+		float dS = GetDist(p);
+		dO += dS;
+		if(dO > MAX_DIST || dS<SURF_DIST) break;
+	}
+	return dO;
+}
+
+void fragment(){
+	vec3 ws_pixel_pos = ((CAMERA_MATRIX * vec4(VERTEX, 1.0)).xyz);
+	vec3 ro = (CAMERA_MATRIX * vec4(0.0, 0.0, 0.0, 1.0)).xyz;
+	vec3 rd = normalize(ws_pixel_pos - ro);
+	
+	float d = RayMarch(ro, rd);
+	ALPHA = step(d, MAX_DIST);
+}
+"
