@@ -5,8 +5,8 @@
 
 [resource]
 shader = ExtResource( 1 )
-shader_param/lava_colour1 = Color( 0.360784, 0, 1, 1 )
-shader_param/lava_colour2 = Color( 0.243137, 0.94902, 1, 1 )
+shader_param/lava_colour1 = Color( 1, 0.937255, 0, 1 )
+shader_param/lava_colour2 = Color( 0.501961, 0, 0, 1 )
 shader_param/sphereA = Plane( 0, 4.368, 0, 0.2 )
 shader_param/sphereB = Plane( 0, 4.318, 0, 0.15 )
 shader_param/sphereC = Plane( 0, 4.358, 0, 0.2 )

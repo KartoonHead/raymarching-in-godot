@@ -135,13 +135,16 @@ float GetLight(vec3 p, float t){
 }
 
 float GetBaseLight(vec3 p, float t){
-	vec3 l = vec3(0.0, 1.0, 0.0);
-	//vec3 l = normalize(lightPos - p);
+	float bottom = 2.7;
+	float grad = (p.y - bottom) * 0.28;
+	grad = 1.0 - min(max(pow(grad, 0.2), 0.0), 1.0);
+	
+	vec3 l = vec3(0.0, -1.0, 0.0);
 	vec3 n = GetNormal(p, t);
 	
 	float diff = dot(n, l);
-	diff = (diff + 1.0) / 2.0;
-	return diff;
+	diff = (diff * 0.5) + 0.5;
+	return grad;
 }
 
 float GetLightHalfLambert(vec3 p, float t){
@@ -170,24 +173,17 @@ void fragment(){
 	
 	float t = TIME * anim_speed;
 
-	//float d = RayMarch(ro, rd);
 	float d = RayMarch(ro, rd, t);
 	vec3 p = ro + rd * d;
-	//float diff = GetLightHalfLambert(p, TIME);
-	float diff = GetLightHalfLambert(p, t);
-	//float diff2 = GetLight(p, TIME);
-	float diff2 = GetLight(p, t);
 	
 	vec3 n = (vec4(GetNormal(p, t), 1.0) * CAMERA_MATRIX).xyz;
 	vec2 mc_uv = (n.xy + 1.0) / 2.0;
 	mc_uv.y = -mc_uv.y;
 	vec3 mc_col = texture(matcap_texture, mc_uv).xyz;
 	
-	//ALBEDO = mc_col * 10.0;
 	float base_light = GetBaseLight(p, t);
-	ALBEDO = mix(lava_colour2.rgb, lava_colour1.rgb, base_light);
+	ALBEDO = mix(lava_colour2.rgb, lava_colour1.rgb, base_light) * 2.0;
 	
-	//ALBEDO = vec3(mix(diff, diff2, 0.8));
 	float max_depth = min(MAX_DIST, depth);
 	if(d >= max_depth){
 		ALPHA = 0.0;
