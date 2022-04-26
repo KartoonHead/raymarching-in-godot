@@ -110,12 +110,12 @@ material/0 = SubResource( 4 )
 
 [node name="Stage_004" type="MeshInstance" parent="."]
 transform = Transform( 3.71424, 0, 0, 0, 3.71424, 0, 0, 0, 3.71424, 0, 0, 0 )
+visible = false
 mesh = SubResource( 1 )
 material/0 = SubResource( 5 )
 
 [node name="Stage_005" type="MeshInstance" parent="."]
 transform = Transform( 1.32191, 0, 0, 0, 2.78038, 0, 0, 0, 1.32191, 0, 4.45291, 0 )
-visible = false
 mesh = SubResource( 1 )
 material/0 = SubResource( 6 )
 
@@ -130,7 +130,6 @@ material/0 = SubResource( 9 )
 
 [node name="LavaLamp" parent="Stage_006" instance=ExtResource( 6 )]
 transform = Transform( 0.756483, 0, 0, 0, 0.359663, 0, 0, 0, 0.756483, 0, -1.60155, 0 )
-visible = false
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource( 8 )

@@ -3,6 +3,8 @@ render_mode unshaded, depth_test_disable;
 
 uniform sampler2D matcap_texture;
 
+uniform vec4 lava_colour1 : hint_color;
+uniform vec4 lava_colour2 : hint_color;
 uniform vec4 sphereA = vec4(0.0, 0.5, 0.0, 0.5);
 uniform vec4 sphereB = vec4(0.0, 0.5, 0.0, 0.5);
 uniform vec4 sphereC = vec4(0.0, 0.5, 0.5, 0.5);
@@ -68,24 +70,7 @@ float sdPlane(vec3 p, vec3 n, float h){
 }
 
 // **** Ray Marching ****
-float GetDist(vec3 p){
-	
-	//vec4 plane = vec4(0.0, 1.0, 0.0, 0.0);
-	
-	float sphereDistA = length(p-sphereA.xyz) - sphereA.w;
-	float sphereDistB = length(p-sphereB.xyz) - sphereB.w;
-	float sphereDistC = length(p-sphereC.xyz) - sphereC.w;
-	
-	float sphereDist = smoothUnion(sphereDistA, sphereDistB, blend);
-	sphereDist = smoothUnion(sphereDist, sphereDistC, blend);
-	
-	float planeDist = dot(p, plane.xyz) - plane.w;
-	
-	float d = min(sphereDist, planeDist);
-	return d;
-}
-
-float GetDistAnim(vec3 p, float time){	
+float GetDist(vec3 p, float time){	
 	float coneDist = sdCone(p - vec3(0.0, cone.y, 0.0), cone.xz);
 	float planeDist = sdPlane(p, plane.xyz, plane.a);
 	
@@ -111,46 +96,23 @@ float GetDistAnim(vec3 p, float time){
 	return d;
 }
 
-vec3 GetNormal(vec3 p){
-	float d = GetDist(p);
+vec3 GetNormal(vec3 p, float time){
+	float d = GetDist(p, time);
 	vec2 e = vec2(0.01, 0.0);
 	
 	vec3 n = d - vec3(
-		GetDist(p-e.xyy),
-		GetDist(p-e.yxy),
-		GetDist(p-e.yyx));
+		GetDist(p-e.xyy, time),
+		GetDist(p-e.yxy, time),
+		GetDist(p-e.yyx, time));
 	
 	return normalize(n);
 }
 
-vec3 GetNormalAnim(vec3 p, float time){
-	float d = GetDistAnim(p, time);
-	vec2 e = vec2(0.01, 0.0);
-	
-	vec3 n = d - vec3(
-		GetDistAnim(p-e.xyy, time),
-		GetDistAnim(p-e.yxy, time),
-		GetDistAnim(p-e.yyx, time));
-	
-	return normalize(n);
-}
-
-float RayMarch(vec3 ro, vec3 rd){
+float RayMarch(vec3 ro, vec3 rd, float time){
 	float dO=0.0;  // dO = current distance
 	for(int i=0; i<MAX_STEPS; i++){
 		vec3 p = ro + rd*dO;  // step along ray
-		float dS = GetDist(p);
-		dO += dS;
-		if(dO > MAX_DIST || dS<SURF_DIST) break;
-	}
-	return dO;
-}
-
-float RayMarchAnim(vec3 ro, vec3 rd, float time){
-	float dO=0.0;  // dO = current distance
-	for(int i=0; i<MAX_STEPS; i++){
-		vec3 p = ro + rd*dO;  // step along ray
-		float dS = GetDistAnim(p, time);
+		float dS = GetDist(p, time);
 		dO += dS;
 		if(dO > MAX_DIST || dS<SURF_DIST) break;
 	}
@@ -159,51 +121,34 @@ float RayMarchAnim(vec3 ro, vec3 rd, float time){
 
 float GetLight(vec3 p, float t){
 	//vec3 lightPos = (vec4(0.0, -1.0, 0.0, 1.0) * cam).xyz;
-	vec3 lightPos = vec3(sin(t), 2.0, cos(t));
+	vec3 lightPos = vec3(0.0, 4.0, 0.0);
 	vec3 l = normalize(lightPos - p);
-	vec3 n = GetNormal(p);
+	vec3 n = GetNormal(p, t);
 	
 	float diff = max(0.0 , dot(n, l));
 	//float diff = dot(n, l);
-	float d = RayMarch(p + n*SURF_DIST*2.0, l);
+	float d = RayMarch(p + n*SURF_DIST*2.0, l, t);
 	if(d < length(lightPos - p)){
 		diff = 0.0;
 	}
 	return diff;
 }
 
-float GetLightAnim(vec3 p, float t){
-	//vec3 lightPos = (vec4(0.0, -1.0, 0.0, 1.0) * cam).xyz;
-	vec3 lightPos = vec3(0.0, 4.0, 0.0);
-	vec3 l = normalize(lightPos - p);
-	vec3 n = GetNormalAnim(p, t);
+float GetBaseLight(vec3 p, float t){
+	vec3 l = vec3(0.0, 1.0, 0.0);
+	//vec3 l = normalize(lightPos - p);
+	vec3 n = GetNormal(p, t);
 	
-	float diff = max(0.0 , dot(n, l));
-	//float diff = dot(n, l);
-	float d = RayMarchAnim(p + n*SURF_DIST*2.0, l, t);
-	if(d < length(lightPos - p)){
-		diff = 0.0;
-	}
+	float diff = dot(n, l);
+	diff = (diff + 1.0) / 2.0;
 	return diff;
 }
 
 float GetLightHalfLambert(vec3 p, float t){
 	//vec3 lightPos = (vec4(0.0, -1.0, 0.0, 1.0) * cam).xyz;
-	vec3 lightPos = vec3(sin(t), 2.0, cos(t));
-	vec3 l = normalize(lightPos - p);
-	vec3 n = GetNormal(p);
-	
-	float diff = dot(n, l);
-	float hl = (diff + 1.0) / 2.0;
-	
-	return hl;
-}
-
-float GetLightHalfLambertAnim(vec3 p, float t){
-	//vec3 lightPos = (vec4(0.0, -1.0, 0.0, 1.0) * cam).xyz;
 	vec3 lightPos = vec3(0.0, 4.0, 0.0);
 	vec3 l = normalize(lightPos - p);
-	vec3 n = GetNormalAnim(p, t);
+	vec3 n = GetNormal(p, t);
 	
 	float diff = dot(n, l);
 	float hl = (diff + 1.0) / 2.0;
@@ -226,19 +171,21 @@ void fragment(){
 	float t = TIME * anim_speed;
 
 	//float d = RayMarch(ro, rd);
-	float d = RayMarchAnim(ro, rd, t);
+	float d = RayMarch(ro, rd, t);
 	vec3 p = ro + rd * d;
 	//float diff = GetLightHalfLambert(p, TIME);
-	float diff = GetLightHalfLambertAnim(p, t);
+	float diff = GetLightHalfLambert(p, t);
 	//float diff2 = GetLight(p, TIME);
-	float diff2 = GetLightAnim(p, t);
+	float diff2 = GetLight(p, t);
 	
-	vec3 n = (vec4(GetNormalAnim(p, t), 1.0) * CAMERA_MATRIX).xyz;
+	vec3 n = (vec4(GetNormal(p, t), 1.0) * CAMERA_MATRIX).xyz;
 	vec2 mc_uv = (n.xy + 1.0) / 2.0;
 	mc_uv.y = -mc_uv.y;
 	vec3 mc_col = texture(matcap_texture, mc_uv).xyz;
 	
-	ALBEDO = mc_col * 10.0;
+	//ALBEDO = mc_col * 10.0;
+	float base_light = GetBaseLight(p, t);
+	ALBEDO = mix(lava_colour2.rgb, lava_colour1.rgb, base_light);
 	
 	//ALBEDO = vec3(mix(diff, diff2, 0.8));
 	float max_depth = min(MAX_DIST, depth);
